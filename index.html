@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 视口设置 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GAME STATION | 独立游戏站</title>
+    <style>
+        :root {
+            --primary-color: #00f3ff;
+            --secondary-color: #bc13fe;
+            --bg-color: #0a0a12;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            /* 关键修复：强制禁止横向溢出，防止页面被撑大导致的缩放 */
+            overflow-x: hidden; 
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .background-anim {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 15% 50%, rgba(188, 19, 254, 0.15), transparent 25%),
+                        radial-gradient(circle at 85% 30%, rgba(0, 243, 255, 0.15), transparent 25%);
+            animation: bgShift 10s infinite alternate;
+        }
+
+        @keyframes bgShift {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            position: relative;
+            width: 100%; /* 确保不溢出 */
+        }
+
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            background: linear-gradient(90deg, #00f3ff, #fff, #bc13fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            margin-bottom: 20px;
+            animation: glow 3s infinite alternate;
+            line-height: 1.1;
+            /* 防止标题过长撑开屏幕，强制换行 */
+            word-wrap: break-word; 
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #ccc;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+            padding: 0 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            /* 修复点：将 280px 改为 260px，确保在 padding 存在时也能放入小屏手机 */
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 25px;
+            padding-bottom: 60px;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+            transform: translateZ(0);
+        }
+
+        @media (hover: hover) {
+            .game-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 10px 30px rgba(0, 243, 255, 0.2);
+                border-color: #00f3ff;
+            }
+            .game-card:hover .card-img {
+                transform: scale(1.1);
+            }
+            .game-card:hover .play-btn {
+                background: #bc13fe;
+                color: white;
+                box-shadow: 0 0 15px #bc13fe;
+            }
+        }
+
+        .game-card:active {
+            transform: scale(0.98);
+            border-color: #00f3ff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .card-img-container {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+        }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .card-img.error { display: none; }
+        
+        .img-fallback {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #222, #333);
+            color: #555;
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .card-content {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-title {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: #00f3ff;
+            font-weight: bold;
+        }
+
+        .game-desc {
+            font-size: 0.95rem;
+            color: #aaa;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        .game-rating {
+            color: #ffd700;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            font-size: 1.1rem;
+        }
+
+        .play-btn {
+            margin-top: auto;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid #bc13fe;
+            color: #bc13fe;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 1rem;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 20px 10px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+            /* 关键修复：防止Footer过宽撑开屏幕 */
+            box-sizing: border-box; 
+            overflow: hidden;
+        }
+
+        .beian-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            line-height: 2;
+            max-width: 100%; /* 限制宽度 */
+        }
+
+        .beian-link {
+            color: #888;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s;
+            /* 关键修复：允许长文本在移动端换行 */
+            white-space: normal; 
+            word-break: break-all; 
+            max-width: 100%;
+        }
+
+        .beian-link:hover {
+            color: var(--primary-color);
+        }
+
+        .beian-icon {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            flex-shrink: 0; /* 防止图标被压缩 */
+        }
+
+        @media screen and (max-width: 768px) {
+            header {
+                padding: 40px 15px 20px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+                letter-spacing: 2px;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .container {
+                gap: 20px;
+                /* 修复点：移动端减小左右 padding，为卡片留出更多空间 */
+                padding: 10px; 
+            }
+
+            .game-card {
+                border-radius: 12px;
+            }
+
+            .beian-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-anim"></div>
+
+    <header>
+        <h1>GAME STATION</h1>
+        <p class="subtitle">
+            独立游戏实验室<br>
+            点击下方卡片立即开始体验
+        </p>
+    </header>
+
+    <div class="container" id="game-grid">
+        <!-- 游戏卡片将通过 JS 生成 -->
+    </div>
+
+    <!-- 备案页脚 -->
+    <footer>
+        <div class="beian-info">
+            <a href="https://beian.miit.gov.cn/" target="_blank" class="beian-link">
+                京ICP备2025154795号-1
+            </a>
+            
+            <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010502058455" target="_blank" class="beian-link">
+                <img src="images/beian.png" alt="" class="beian-icon" onerror="this.style.display='none'">
+                京公网安备 11010502058455号
+            </a>
+        </div>
+        <div style="margin-top: 8px; opacity: 0.5;">
+            © 2025 GAME STATION. All Rights Reserved.
+        </div>
+    </footer>
+
+    <script>
+        var games = [
+            {
+                name: "Rogue塔防",
+                img: "soldier.jpg",
+                link: "soldier.html",
+                desc: "肉鸽塔防，杀怪升级，发电造炮塔。",
+                rating: 2
+            },
+            {
+                name: "3D极速飞车",
+                img: "car.jpg",
+                link: "car.html",
+                desc: "3D公路赛车，油门踩到底，以速度赢取高分。",
+                rating: 5
+            },
+            {
+                name: "射击练习",
+                img: "shooter.jpg",
+                link: "shooter.html",
+                desc: "射击瞄准练习，包含连击系统和动态难度。",
+                rating: 4
+            },
+            {
+                name: "幸存者",
+                img: "survivor.jpg",
+                link: "survivor.html",
+                desc: "Roguelite割草，升级武器，对抗海量敌人。",
+                rating: 5
+            },
+            {
+                name: "双人格斗",
+                img: "fight.jpg",
+                link: "fight.html",
+                desc: "简易双人格斗游戏，带连击系统。",
+                rating: 3
+            }
+        ];
+
+        var grid = document.getElementById('game-grid');
+
+        function getStars(count) {
+            var stars = '';
+            for (var i = 0; i < count; i++) stars += '★';
+            for (var j = 0; j < 5 - count; j++) stars += '☆';
+            return stars;
+        }
+
+        function renderGrid() {
+            grid.innerHTML = '';
+            for (var i = 0; i < games.length; i++) {
+                (function(game) {
+                    var card = document.createElement('a');
+                    card.className = 'game-card';
+                    card.href = game.link;
+                    var imgSrc = './images/' + game.img;
+                    
+                    var htmlContent = '';
+                    htmlContent += '<div class="card-img-container">';
+                    htmlContent += '<img src="' + imgSrc + '" class="card-img" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\'">';
+                    htmlContent += '<div class="img-fallback" style="display:none">' + (game.name.charAt(0)) + '</div>';
+                    htmlContent += '</div>';
+                    
+                    htmlContent += '<div class="card-content">';
+                    htmlContent += '<div class="game-title">' + game.name + '</div>';
+                    htmlContent += '<div class="game-rating">' + getStars(game.rating) + '</div>';
+                    htmlContent += '<div class="game-desc">' + game.desc + '</div>';
+                    htmlContent += '<div class="play-btn">开始游戏</div>';
+                    htmlContent += '</div>';
+
+                    card.innerHTML = htmlContent;
+                    grid.appendChild(card);
+                })(games[i]);
+            }
+        }
+        renderGrid();
+    </script>
+</body>
+</html>
